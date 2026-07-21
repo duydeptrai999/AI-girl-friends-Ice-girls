@@ -13,15 +13,12 @@
     <!-- Stylesheet -->
     <link rel="stylesheet" href="styles.css">
     
-    <!-- 1. Cubism 2 Runtime (Bắt buộc để tránh lỗi khởi tạo của plugin) -->
+    <!-- 1. Cubism 2 Runtime -->
     <script src="https://cdn.jsdelivr.net/gh/dylanNew/live2d/webgl/Live2D/lib/live2d.min.js"></script>
-
-    <!-- 2. Cubism 4 Runtime (Cho mô hình Cubism 3/4 như IceGirl) -->
+    <!-- 2. Cubism 4 Runtime -->
     <script src="https://cdn.jsdelivr.net/npm/live2dcubismcore/live2dcubismcore.min.js"></script>
-    
     <!-- 3. PixiJS (v6.5.10) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/6.5.10/browser/pixi.min.js"></script>
-    
     <!-- 4. Pixi-Live2D-Display Plugin -->
     <script src="https://cdn.jsdelivr.net/npm/pixi-live2d-display/dist/index.min.js"></script>
 </head>
@@ -30,18 +27,18 @@
     <!-- Dynamic background glow -->
     <div class="bg-glow"></div>
 
-    <!-- Màn hình chờ tải -->
+    <!-- Loading overlay -->
     <div id="loading-overlay">
         <div class="loader"></div>
         <div class="loading-text">Đang tải mô hình Live2D...</div>
     </div>
 
-    <!-- Hướng dẫn tương tác nhanh -->
-    <div class="interaction-hint">
+    <!-- Interaction hint -->
+    <div class="interaction-hint" id="interaction-hint">
         💡 Kéo chuột trái để di chuyển · Cuộn chuột để phóng to/thu nhỏ
     </div>
 
-    <!-- Sidebar Trái: Biểu cảm (Expressions) -->
+    <!-- Sidebar Trái: Biểu cảm -->
     <div class="sidebar" id="sidebar-left">
         <div class="sidebar-title">
             <span>🎭 Biểu Cảm</span>
@@ -54,12 +51,12 @@
         </div>
     </div>
 
-    <!-- Khu vực hiển thị mô hình Live2D -->
+    <!-- Canvas Live2D -->
     <div id="canvas-container">
         <canvas id="live2d-canvas"></canvas>
     </div>
 
-    <!-- Sidebar Phải: Chuyển động (Motions) -->
+    <!-- Sidebar Phải: Chuyển động -->
     <div class="sidebar" id="sidebar-right">
         <div class="sidebar-title">
             <span>⚡ Chuyển Động</span>
@@ -72,7 +69,7 @@
         </div>
     </div>
 
-    <!-- Thanh công cụ điều khiển ở dưới -->
+    <!-- Control Panel -->
     <div class="control-panel">
         <button class="control-btn" id="btn-zoom-in" title="Phóng to">➕</button>
         <button class="control-btn" id="btn-zoom-out" title="Thu nhỏ">➖</button>
@@ -81,13 +78,85 @@
         <button class="control-btn" id="btn-look-center" title="Khoá nhìn thẳng">👁️‍🗨️</button>
         <button class="control-btn" id="btn-change-bg" title="Đổi màu nền">🖼️</button>
         <button class="control-btn" id="btn-toggle-sidebar" title="Ẩn/Hiện thanh công cụ">🗂️</button>
+        <div class="control-divider"></div>
+        <button class="control-btn chat-toggle-btn" id="btn-toggle-chat" title="Mở/Đóng chat AI">💬</button>
     </div>
 
-    <!-- Floating Show-Sidebar Buttons -->
+    <!-- Floating edge buttons -->
     <button class="floating-toggle-btn show-left-btn" id="btn-show-left-sidebar" title="Hiện thanh biểu cảm">▶</button>
     <button class="floating-toggle-btn show-right-btn" id="btn-show-right-sidebar" title="Hiện thanh chuyển động">◀</button>
 
-    <!-- Logic Javascript -->
-    <script src="app.js?v=14"></script>
+    <!-- ===== AI CHAT PANEL ===== -->
+    <div class="chat-panel" id="chat-panel">
+        <div class="chat-header">
+            <div class="chat-avatar-wrap">
+                <div class="chat-avatar-ring"></div>
+                <span class="chat-avatar-emoji">🌸</span>
+            </div>
+            <div class="chat-header-info">
+                <div class="chat-name">IceGirl AI</div>
+                <div class="chat-status" id="chat-status">
+                    <span class="status-dot"></span>
+                    <span id="chat-status-text">Sẵn sàng trò chuyện</span>
+                </div>
+            </div>
+            <div class="chat-header-actions">
+                <button class="chat-icon-btn" id="btn-chat-settings" title="Cài đặt API Key">⚙️</button>
+                <button class="chat-icon-btn" id="btn-clear-chat" title="Xóa hội thoại">🗑️</button>
+                <button class="chat-icon-btn close-chat" id="btn-close-chat" title="Đóng chat">✕</button>
+            </div>
+        </div>
+
+        <div class="chat-messages" id="chat-messages">
+            <div class="chat-msg ai">
+                <div class="msg-avatar-icon">🌸</div>
+                <div class="msg-bubble">
+                    <p class="msg-text">Xin chào! Tôi là IceGirl 💙 Hãy nói chuyện với tôi nhé~ Bạn muốn hỏi tôi điều gì?</p>
+                    <span class="msg-time">Vừa xong</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="chat-footer">
+            <div class="typing-indicator hidden" id="typing-indicator">
+                <div class="typing-dots"><span></span><span></span><span></span></div>
+                <span class="typing-text">IceGirl đang gõ...</span>
+            </div>
+            <div class="chat-input-row">
+                <textarea class="chat-textarea" id="chat-input" placeholder="Nhắn gì đó với IceGirl..." rows="1"></textarea>
+                <button class="chat-send-btn" id="btn-send-chat" title="Gửi tin nhắn">
+                    <svg viewBox="0 0 24 24" fill="none">
+                        <path d="M22 2L11 13" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+                        <path d="M22 2L15 22L11 13L2 9L22 2Z" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== API KEY MODAL ===== -->
+    <div class="modal-overlay hidden" id="api-key-modal">
+        <div class="modal-box">
+            <button class="modal-close-x" id="btn-close-api-modal">✕</button>
+            <div class="modal-icon-wrap">🔑</div>
+            <h3 class="modal-title">Cài đặt Gemini API Key</h3>
+            <p class="modal-desc">
+                Nhập <strong>Gemini API Key</strong> để IceGirl AI có thể phản hồi thực sự.<br>
+                Key được lưu trong trình duyệt của bạn (localStorage), không gửi đi đâu. 🔒
+            </p>
+            <a class="modal-link" href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener">
+                🔗 Lấy API Key miễn phí tại Google AI Studio
+            </a>
+            <input class="modal-input" id="api-key-input" type="password" placeholder="AIzaSy..." autocomplete="off"/>
+            <div class="modal-footer">
+                <button class="modal-btn secondary" id="btn-cancel-api">Hủy</button>
+                <button class="modal-btn primary" id="btn-save-api">💾 Lưu &amp; Kết nối</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="app.js?v=15"></script>
+    <script src="chat.js?v=1"></script>
 </body>
 </html>
