@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IceGirl Live2D Viewer</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Stylesheet -->
+    <link rel="stylesheet" href="styles.css">
+    
+    <!-- 1. Cubism 2 Runtime (Bắt buộc để tránh lỗi khởi tạo của plugin) -->
+    <script src="https://cdn.jsdelivr.net/gh/dylanNew/live2d/webgl/Live2D/lib/live2d.min.js"></script>
+
+    <!-- 2. Cubism 4 Runtime (Cho mô hình Cubism 3/4 như IceGirl) -->
+    <script src="https://cdn.jsdelivr.net/npm/live2dcubismcore/live2dcubismcore.min.js"></script>
+    
+    <!-- 3. PixiJS (v6.5.10) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/6.5.10/browser/pixi.min.js"></script>
+    
+    <!-- 4. Pixi-Live2D-Display Plugin -->
+    <script src="https://cdn.jsdelivr.net/npm/pixi-live2d-display/dist/index.min.js"></script>
+</head>
+<body>
+
+    <!-- Dynamic background glow -->
+    <div class="bg-glow"></div>
+
+    <!-- Màn hình chờ tải -->
+    <div id="loading-overlay">
+        <div class="loader"></div>
+        <div class="loading-text">Đang tải mô hình Live2D...</div>
+    </div>
+
+    <!-- Hướng dẫn tương tác nhanh -->
+    <div class="interaction-hint">
+        💡 Kéo chuột trái để di chuyển · Cuộn chuột để phóng to/thu nhỏ
+    </div>
+
+    <!-- Sidebar Trái: Biểu cảm (Expressions) -->
+    <div class="sidebar" id="sidebar-left">
+        <div class="sidebar-title">
+            <span>🎭 Biểu Cảm</span>
+            <button class="close-sidebar-btn" id="btn-close-left-sidebar" title="Ẩn thanh công cụ">◀</button>
+        </div>
+        <div class="scroll-area" id="expressions-container">
+            <div style="color: var(--text-muted); font-size: 0.9rem; text-align: center; padding: 20px;">
+                Đang tìm biểu cảm...
+            </div>
+        </div>
+    </div>
+
+    <!-- Khu vực hiển thị mô hình Live2D -->
+    <div id="canvas-container">
+        <canvas id="live2d-canvas"></canvas>
+    </div>
+
+    <!-- Sidebar Phải: Chuyển động (Motions) -->
+    <div class="sidebar" id="sidebar-right">
+        <div class="sidebar-title">
+            <span>⚡ Chuyển Động</span>
+            <button class="close-sidebar-btn" id="btn-close-right-sidebar" title="Ẩn thanh công cụ">▶</button>
+        </div>
+        <div class="scroll-area" id="motions-container">
+            <div style="color: var(--text-muted); font-size: 0.9rem; text-align: center; padding: 20px;">
+                Đang tìm chuyển động...
+            </div>
+        </div>
+    </div>
+
+    <!-- Thanh công cụ điều khiển ở dưới -->
+    <div class="control-panel">
+        <button class="control-btn" id="btn-zoom-in" title="Phóng to">➕</button>
+        <button class="control-btn" id="btn-zoom-out" title="Thu nhỏ">➖</button>
+        <button class="control-btn" id="btn-reset" title="Đặt lại vị trí gốc">🔄</button>
+        <div class="control-divider"></div>
+        <button class="control-btn" id="btn-look-center" title="Khoá nhìn thẳng">👁️‍🗨️</button>
+        <button class="control-btn" id="btn-change-bg" title="Đổi màu nền">🖼️</button>
+        <button class="control-btn" id="btn-toggle-sidebar" title="Ẩn/Hiện thanh công cụ">🗂️</button>
+    </div>
+
+    <!-- Floating Show-Sidebar Buttons -->
+    <button class="floating-toggle-btn show-left-btn" id="btn-show-left-sidebar" title="Hiện thanh biểu cảm">▶</button>
+    <button class="floating-toggle-btn show-right-btn" id="btn-show-right-sidebar" title="Hiện thanh chuyển động">◀</button>
+
+    <!-- Logic Javascript -->
+    <script src="app.js?v=14"></script>
+</body>
+</html>
