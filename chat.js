@@ -1,135 +1,237 @@
 /**
- * chat.js — IceGirl AI Chat Module
- * Sử dụng Gemini API (google.generativeai) để chat với AI
+ * chat.js — IceGirl AI Chat Module v2
+ * Multi-provider: Gemini | OpenRouter | Cohere
  */
+
+// =============================================
+// CONSTANTS & CONFIG
+// =============================================
+const SYSTEM_PROMPT = `Bạn là IceGirl — một cô gái AI dễ thương, duyên dáng và tinh nghịch, gắn liền với nhân vật Live2D trong giao diện viewer. Hãy trả lời theo phong cách của IceGirl: thân thiện, duyên dáng, đôi khi tinh nghịch, thỉnh thoảng dùng emoji nhẹ nhàng (💙🌸✨😊). Giữ câu trả lời ngắn gọn, tự nhiên và thú vị. Trả lời bằng tiếng Việt trừ khi người dùng dùng ngôn ngữ khác.`;
+
+const PROVIDERS = {
+    gemini: {
+        id: 'gemini',
+        label: 'Google Gemini',
+        icon: '✨',
+        color: '#4facfe',
+        storageKey: 'icegirl_gemini_key',
+        placeholder: 'AIzaSy...',
+        link: 'https://aistudio.google.com/app/apikey',
+        linkText: 'Google AI Studio',
+        defaultModel: 'gemini-2.0-flash',
+        models: [
+            { id: 'gemini-2.0-flash', label: 'Gemini 2.0 Flash (Nhanh)' },
+            { id: 'gemini-1.5-pro', label: 'Gemini 1.5 Pro (Mạnh)' },
+            { id: 'gemini-1.5-flash', label: 'Gemini 1.5 Flash (Tiết kiệm)' },
+        ],
+    },
+    openrouter: {
+        id: 'openrouter',
+        label: 'OpenRouter',
+        icon: '🌐',
+        color: '#a78bfa',
+        storageKey: 'icegirl_openrouter_key',
+        placeholder: 'sk-or-...',
+        link: 'https://openrouter.ai/keys',
+        linkText: 'OpenRouter Dashboard',
+        defaultModel: 'meta-llama/llama-3.1-8b-instruct:free',
+        models: [
+            { id: 'meta-llama/llama-3.1-8b-instruct:free',   label: 'Llama 3.1 8B (Miễn phí)' },
+            { id: 'meta-llama/llama-3.3-70b-instruct:free',  label: 'Llama 3.3 70B (Miễn phí)' },
+            { id: 'google/gemma-3-27b-it:free',              label: 'Gemma 3 27B (Miễn phí)' },
+            { id: 'deepseek/deepseek-chat-v3-0324:free',     label: 'DeepSeek V3 (Miễn phí)' },
+            { id: 'openai/gpt-4o-mini',                      label: 'GPT-4o Mini (Trả phí)' },
+            { id: 'anthropic/claude-3.5-haiku',              label: 'Claude 3.5 Haiku (Trả phí)' },
+            { id: 'google/gemini-2.0-flash-exp:free',        label: 'Gemini 2.0 Flash Exp (Miễn phí)' },
+        ],
+    },
+    cohere: {
+        id: 'cohere',
+        label: 'Cohere',
+        icon: '🔮',
+        color: '#34d399',
+        storageKey: 'icegirl_cohere_key',
+        placeholder: '...',
+        link: 'https://dashboard.cohere.com/api-keys',
+        linkText: 'Cohere Dashboard',
+        defaultModel: 'command-r-plus-08-2024',
+        models: [
+            { id: 'command-r-plus-08-2024',  label: 'Command R+ (Tốt nhất)' },
+            { id: 'command-r-08-2024',       label: 'Command R (Cân bằng)' },
+            { id: 'command-light',           label: 'Command Light (Nhanh nhất)' },
+            { id: 'command-nightly',         label: 'Command Nightly (Thử nghiệm)' },
+        ],
+    },
+};
 
 // =============================================
 // STATE
 // =============================================
-const STORAGE_KEY_API = 'icegirl_gemini_api_key';
-const SYSTEM_PROMPT = `Bạn là IceGirl — một cô gái AI dễ thương, duyên dáng và tinh nghịch, được gắn liền với nhân vật Live2D trong giao diện viewer. Hãy trả lời theo phong cách của IceGirl: thân thiện, duyên dáng, đôi khi tinh nghịch, thỉnh thoảng dùng các biểu tượng cảm xúc nhẹ nhàng (💙🌸✨😊). Giữ câu trả lời ngắn gọn, tự nhiên và thú vị. Trả lời bằng tiếng Việt trừ khi người dùng nói tiếng khác.`;
+let chatHistory   = [];
+let isSending     = false;
+let activeProvider = localStorage.getItem('icegirl_active_provider') || 'gemini';
+let selectedModel  = {};  // { providerId: modelId }
 
-let chatHistory = []; // { role: 'user'|'model', parts: [{ text }] }
-let isSending = false;
-let geminiApiKey = '';
+// Load saved model selections
+Object.keys(PROVIDERS).forEach(pid => {
+    const saved = localStorage.getItem(`icegirl_model_${pid}`);
+    selectedModel[pid] = saved || PROVIDERS[pid].defaultModel;
+});
 
 // =============================================
 // INIT
 // =============================================
 document.addEventListener('DOMContentLoaded', () => {
-    geminiApiKey = localStorage.getItem(STORAGE_KEY_API) || '';
     setupChatListeners();
     updateChatStatusUI();
 });
 
 // =============================================
+// HELPERS: get active API key
+// =============================================
+function getActiveKey() {
+    return localStorage.getItem(PROVIDERS[activeProvider].storageKey) || '';
+}
+
+function hasAnyKey() {
+    return !!getActiveKey();
+}
+
+// =============================================
 // SETUP LISTENERS
 // =============================================
 function setupChatListeners() {
-    const btnToggleChat   = document.getElementById('btn-toggle-chat');
-    const btnCloseChat    = document.getElementById('btn-close-chat');
-    const btnSend         = document.getElementById('btn-send-chat');
-    const chatInput       = document.getElementById('chat-input');
-    const btnClearChat    = document.getElementById('btn-clear-chat');
-    const btnSettings     = document.getElementById('btn-chat-settings');
-    const btnCloseModal   = document.getElementById('btn-close-api-modal');
-    const btnCancelApi    = document.getElementById('btn-cancel-api');
-    const btnSaveApi      = document.getElementById('btn-save-api');
-    const apiKeyModal     = document.getElementById('api-key-modal');
-    const apiKeyInput     = document.getElementById('api-key-input');
-
-    // Toggle chat panel open/close
-    btnToggleChat?.addEventListener('click', () => {
+    // Toggle panel
+    document.getElementById('btn-toggle-chat')?.addEventListener('click', () => {
         const panel = document.getElementById('chat-panel');
         const isOpen = panel.classList.toggle('open');
-        btnToggleChat.classList.toggle('active', isOpen);
-
+        document.getElementById('btn-toggle-chat').classList.toggle('active', isOpen);
         if (isOpen) {
-            // If no API key, prompt the user to set one
-            if (!geminiApiKey) {
-                setTimeout(() => openApiModal(), 400);
-            }
+            if (!hasAnyKey()) setTimeout(() => openSettingsModal(), 400);
             scrollToBottom();
-            chatInput?.focus();
+            document.getElementById('chat-input')?.focus();
         }
     });
 
-    btnCloseChat?.addEventListener('click', () => {
+    document.getElementById('btn-close-chat')?.addEventListener('click', () => {
         document.getElementById('chat-panel').classList.remove('open');
         document.getElementById('btn-toggle-chat').classList.remove('active');
     });
 
-    // Send button
-    btnSend?.addEventListener('click', handleSend);
-
-    // Enter key to send (Shift+Enter for newline)
-    chatInput?.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            handleSend();
-        }
+    // Send
+    document.getElementById('btn-send-chat')?.addEventListener('click', handleSend);
+    document.getElementById('chat-input')?.addEventListener('keydown', e => {
+        if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); }
     });
 
     // Auto-resize textarea
-    chatInput?.addEventListener('input', () => {
-        chatInput.style.height = 'auto';
-        chatInput.style.height = Math.min(chatInput.scrollHeight, 120) + 'px';
+    document.getElementById('chat-input')?.addEventListener('input', function() {
+        this.style.height = 'auto';
+        this.style.height = Math.min(this.scrollHeight, 120) + 'px';
     });
 
-    // Clear chat
-    btnClearChat?.addEventListener('click', () => {
+    // Clear
+    document.getElementById('btn-clear-chat')?.addEventListener('click', () => {
         chatHistory = [];
-        const messagesEl = document.getElementById('chat-messages');
-        messagesEl.innerHTML = '';
+        document.getElementById('chat-messages').innerHTML = '';
         appendMessage('ai', 'Hội thoại đã được xóa! Bạn muốn nói gì với tôi nào? 💙');
     });
 
-    // Open API key settings
-    btnSettings?.addEventListener('click', openApiModal);
+    // Settings
+    document.getElementById('btn-chat-settings')?.addEventListener('click', openSettingsModal);
 
-    // Close modal
-    const closeModal = () => {
-        apiKeyModal?.classList.add('hidden');
-        apiKeyInput.value = '';
-    };
-
-    btnCloseModal?.addEventListener('click', closeModal);
-    btnCancelApi?.addEventListener('click', closeModal);
-    apiKeyModal?.addEventListener('click', (e) => {
-        if (e.target === apiKeyModal) closeModal();
+    // Modal close
+    document.getElementById('btn-close-settings-modal')?.addEventListener('click', closeSettingsModal);
+    document.getElementById('api-key-modal')?.addEventListener('click', e => {
+        if (e.target === document.getElementById('api-key-modal')) closeSettingsModal();
     });
 
-    // Save API key
-    btnSaveApi?.addEventListener('click', () => {
-        const key = apiKeyInput?.value.trim();
-        if (!key) {
-            apiKeyInput?.focus();
-            apiKeyInput.style.borderColor = 'var(--accent)';
-            return;
-        }
-        geminiApiKey = key;
-        localStorage.setItem(STORAGE_KEY_API, key);
-        closeModal();
-        updateChatStatusUI();
-        appendMessage('ai', 'Tuyệt vời! API Key đã được cài đặt 🔑 Bây giờ chúng ta có thể trò chuyện thật sự rồi! 🌸');
-    });
-
-    // Allow Enter in modal input
-    apiKeyInput?.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') btnSaveApi?.click();
-    });
+    // Save button
+    document.getElementById('btn-save-api')?.addEventListener('click', saveSettings);
 }
 
 // =============================================
-// OPEN API MODAL
+// SETTINGS MODAL
 // =============================================
-function openApiModal() {
+function openSettingsModal() {
     const modal = document.getElementById('api-key-modal');
-    const input = document.getElementById('api-key-input');
     modal?.classList.remove('hidden');
-    // Pre-fill if key exists
-    if (geminiApiKey) input.value = geminiApiKey;
-    setTimeout(() => input?.focus(), 100);
+    renderSettingsModal();
+}
+
+function closeSettingsModal() {
+    document.getElementById('api-key-modal')?.classList.add('hidden');
+}
+
+function renderSettingsModal() {
+    const container = document.getElementById('modal-provider-tabs');
+    const keyInput   = document.getElementById('api-key-input');
+    const modelSel   = document.getElementById('model-select');
+    const linkEl     = document.getElementById('api-link');
+    if (!container) return;
+
+    // Build tabs
+    container.innerHTML = Object.values(PROVIDERS).map(p => `
+        <button class="provider-tab ${p.id === activeProvider ? 'active' : ''}"
+                data-provider="${p.id}"
+                style="--tab-color: ${p.color}">
+            <span class="tab-icon">${p.icon}</span>
+            <span class="tab-label">${p.label}</span>
+            ${localStorage.getItem(p.storageKey) ? '<span class="tab-badge">✓</span>' : ''}
+        </button>
+    `).join('');
+
+    // Tab click
+    container.querySelectorAll('.provider-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+            activeProvider = tab.dataset.provider;
+            localStorage.setItem('icegirl_active_provider', activeProvider);
+            renderSettingsModal();
+        });
+    });
+
+    // Fill key input
+    const p = PROVIDERS[activeProvider];
+    keyInput.placeholder = p.placeholder;
+    keyInput.value = localStorage.getItem(p.storageKey) || '';
+
+    // Fill model selector
+    modelSel.innerHTML = p.models.map(m => `
+        <option value="${m.id}" ${m.id === selectedModel[activeProvider] ? 'selected' : ''}>
+            ${m.label}
+        </option>
+    `).join('');
+
+    modelSel.onchange = () => {
+        selectedModel[activeProvider] = modelSel.value;
+        localStorage.setItem(`icegirl_model_${activeProvider}`, modelSel.value);
+    };
+
+    // Link
+    linkEl.href = p.link;
+    linkEl.textContent = `🔗 Lấy API Key tại ${p.linkText}`;
+
+    // Focus
+    setTimeout(() => keyInput?.focus(), 80);
+}
+
+function saveSettings() {
+    const key = document.getElementById('api-key-input')?.value.trim();
+    const p = PROVIDERS[activeProvider];
+
+    if (!key) {
+        const input = document.getElementById('api-key-input');
+        input.style.borderColor = 'var(--accent)';
+        input.focus();
+        setTimeout(() => input.style.borderColor = '', 1500);
+        return;
+    }
+
+    localStorage.setItem(p.storageKey, key);
+    localStorage.setItem('icegirl_active_provider', activeProvider);
+    closeSettingsModal();
+    updateChatStatusUI();
+    appendMessage('ai', `${p.icon} Đã kết nối với **${p.label}** thành công! Hãy trò chuyện với tôi nhé 🌸`);
 }
 
 // =============================================
@@ -137,48 +239,47 @@ function openApiModal() {
 // =============================================
 async function handleSend() {
     if (isSending) return;
-
     const chatInput = document.getElementById('chat-input');
     const text = chatInput?.value.trim();
     if (!text) return;
 
-    if (!geminiApiKey) {
-        openApiModal();
+    if (!hasAnyKey()) {
+        openSettingsModal();
         return;
     }
 
-    // Reset input
     chatInput.value = '';
     chatInput.style.height = 'auto';
 
-    // Append user message
     appendMessage('user', text);
+    chatHistory.push({ role: 'user', content: text });
 
-    // Add to history
-    chatHistory.push({ role: 'user', parts: [{ text }] });
-
-    // Show typing + update status
     setTyping(true);
     isSending = true;
 
     try {
-        const reply = await callGeminiAPI(text);
-        chatHistory.push({ role: 'model', parts: [{ text: reply }] });
-        appendMessage('ai', reply);
+        let reply = '';
 
-        // Optionally trigger a happy motion on the Live2D model
-        triggerModelReaction('happy');
-    } catch (err) {
-        console.error('Gemini API error:', err);
-        let errMsg = 'Ôi, có lỗi xảy ra rồi 😢 Thử lại sau nhé!';
-        if (err.message?.includes('API_KEY_INVALID') || err.message?.includes('API key not valid')) {
-            errMsg = '❌ API Key không hợp lệ. Hãy kiểm tra lại nhé! ⚙️';
-        } else if (err.message?.includes('quota')) {
-            errMsg = '😅 Đã hết quota API hôm nay rồi, thử lại vào ngày mai nhé!';
-        } else if (err.message?.includes('network') || err.message?.includes('Failed to fetch')) {
-            errMsg = '🌐 Không có kết nối mạng, kiểm tra lại internet nhé!';
+        switch (activeProvider) {
+            case 'gemini':
+                reply = await callGemini(text);
+                break;
+            case 'openrouter':
+                reply = await callOpenRouter(text);
+                break;
+            case 'cohere':
+                reply = await callCohere(text);
+                break;
+            default:
+                throw new Error('Unknown provider');
         }
-        appendMessage('ai', errMsg);
+
+        chatHistory.push({ role: 'assistant', content: reply });
+        appendMessage('ai', reply);
+        triggerModelReaction();
+    } catch (err) {
+        console.error(`[${activeProvider}] API error:`, err);
+        appendMessage('ai', formatError(err.message));
     } finally {
         setTyping(false);
         isSending = false;
@@ -186,81 +287,172 @@ async function handleSend() {
 }
 
 // =============================================
-// CALL GEMINI API
+// API CALLERS
 // =============================================
-async function callGeminiAPI(userText) {
-    // Build contents array with system prompt prepended as first user turn
+
+/** Gemini API */
+async function callGemini(userText) {
+    const key   = getActiveKey();
+    const model = selectedModel['gemini'];
+    const url   = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`;
+
+    // Build contents: system-turn pair + history
     const contents = [
-        { role: 'user', parts: [{ text: SYSTEM_PROMPT }] },
+        { role: 'user',  parts: [{ text: SYSTEM_PROMPT }] },
         { role: 'model', parts: [{ text: 'Hiểu rồi! Tôi sẽ đóng vai IceGirl 🌸' }] },
-        ...chatHistory
+        ...chatHistory.map(m => ({
+            role: m.role === 'assistant' ? 'model' : 'user',
+            parts: [{ text: m.content }],
+        })),
     ];
-
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiApiKey}`;
-
-    const body = {
-        contents,
-        generationConfig: {
-            temperature: 0.85,
-            maxOutputTokens: 512,
-            topP: 0.95,
-        },
-        safetySettings: [
-            { category: 'HARM_CATEGORY_HARASSMENT',        threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
-            { category: 'HARM_CATEGORY_HATE_SPEECH',       threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
-            { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
-            { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
-        ],
-    };
 
     const res = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
+        body: JSON.stringify({
+            contents,
+            generationConfig: { temperature: 0.85, maxOutputTokens: 512, topP: 0.95 },
+        }),
     });
 
     if (!res.ok) {
-        const errData = await res.json().catch(() => ({}));
-        throw new Error(errData?.error?.message || `HTTP ${res.status}`);
+        const e = await res.json().catch(() => ({}));
+        throw new Error(e?.error?.message || `HTTP ${res.status}`);
     }
 
     const data = await res.json();
     const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-    if (!text) throw new Error('Empty response from Gemini API');
+    if (!text) throw new Error('Empty response from Gemini');
     return text;
+}
+
+/** OpenRouter API (OpenAI-compatible) */
+async function callOpenRouter(userText) {
+    const key   = getActiveKey();
+    const model = selectedModel['openrouter'];
+
+    const messages = [
+        { role: 'system', content: SYSTEM_PROMPT },
+        ...chatHistory.map(m => ({ role: m.role === 'assistant' ? 'assistant' : 'user', content: m.content })),
+    ];
+
+    const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${key}`,
+            'HTTP-Referer': window.location.href,
+            'X-Title': 'IceGirl Live2D Chat',
+        },
+        body: JSON.stringify({
+            model,
+            messages,
+            max_tokens: 512,
+            temperature: 0.85,
+        }),
+    });
+
+    if (!res.ok) {
+        const e = await res.json().catch(() => ({}));
+        throw new Error(e?.error?.message || `HTTP ${res.status}`);
+    }
+
+    const data = await res.json();
+    const text = data?.choices?.[0]?.message?.content;
+    if (!text) throw new Error('Empty response from OpenRouter');
+    return text;
+}
+
+/** Cohere API v2 */
+async function callCohere(userText) {
+    const key   = getActiveKey();
+    const model = selectedModel['cohere'];
+
+    const messages = [
+        { role: 'system', content: SYSTEM_PROMPT },
+        ...chatHistory.map(m => ({
+            role: m.role === 'assistant' ? 'chatbot' : 'user',
+            content: m.content,
+        })),
+    ];
+
+    const res = await fetch('https://api.cohere.ai/v2/chat', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${key}`,
+            'X-Client-Name': 'IceGirl Live2D',
+        },
+        body: JSON.stringify({
+            model,
+            messages,
+            max_tokens: 512,
+            temperature: 0.8,
+        }),
+    });
+
+    if (!res.ok) {
+        const e = await res.json().catch(() => ({}));
+        throw new Error(e?.message || `HTTP ${res.status}`);
+    }
+
+    const data = await res.json();
+    const text = data?.message?.content?.[0]?.text;
+    if (!text) throw new Error('Empty response from Cohere');
+    return text;
+}
+
+// =============================================
+// ERROR FORMATTER
+// =============================================
+function formatError(msg = '') {
+    const m = msg.toLowerCase();
+    if (m.includes('api key') || m.includes('api_key') || m.includes('unauthorized') || m.includes('401'))
+        return `❌ API Key không hợp lệ hoặc hết hạn! Vào ⚙️ để kiểm tra lại nhé.`;
+    if (m.includes('quota') || m.includes('rate limit') || m.includes('429'))
+        return `😅 Đã hết quota hoặc bị rate limit, thử lại sau vài giây nhé!`;
+    if (m.includes('fetch') || m.includes('network') || m.includes('failed to'))
+        return `🌐 Không kết nối được mạng. Kiểm tra internet của bạn nhé!`;
+    if (m.includes('model') || m.includes('404'))
+        return `🤔 Model không tồn tại hoặc không được phép dùng. Thử đổi model khác nhé!`;
+    return `😢 Có lỗi xảy ra: ${msg.slice(0, 80)}`;
 }
 
 // =============================================
 // APPEND MESSAGE TO UI
 // =============================================
 function appendMessage(role, text) {
-    const messagesEl = document.getElementById('chat-messages');
-    if (!messagesEl) return;
+    const container = document.getElementById('chat-messages');
+    if (!container) return;
 
     const isAI = role === 'ai';
-    const now = new Date();
-    const time = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
+    const now  = new Date();
+    const time = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
+
+    // Bold **text** support
+    const formatted = escapeHtml(text)
+        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\n/g, '<br>');
 
     const msgEl = document.createElement('div');
     msgEl.className = `chat-msg ${isAI ? 'ai' : 'user'}`;
-
-    // Format text: newlines to <br>, keep links clickable
-    const formattedText = escapeHtml(text).replace(/\n/g, '<br>');
-
     msgEl.innerHTML = `
-        <div class="msg-avatar-icon">${isAI ? '🌸' : '🙋'}</div>
+        <div class="msg-avatar-icon">${isAI ? getProviderIcon() : '🙋'}</div>
         <div class="msg-bubble">
-            <p class="msg-text">${formattedText}</p>
-            <span class="msg-time">${time}</span>
-        </div>
-    `;
+            <p class="msg-text">${formatted}</p>
+            <span class="msg-time">${time} ${isAI ? '· ' + (PROVIDERS[activeProvider]?.label || '') : ''}</span>
+        </div>`;
 
-    messagesEl.appendChild(msgEl);
+    container.appendChild(msgEl);
     scrollToBottom();
 }
 
+function getProviderIcon() {
+    return PROVIDERS[activeProvider]?.icon || '🌸';
+}
+
 // =============================================
-// HELPERS
+// UI HELPERS
 // =============================================
 function scrollToBottom() {
     const el = document.getElementById('chat-messages');
@@ -268,16 +460,11 @@ function scrollToBottom() {
 }
 
 function setTyping(isTyping) {
-    const indicator = document.getElementById('typing-indicator');
-    const statusDot = document.querySelector('.status-dot');
+    document.getElementById('typing-indicator')?.classList.toggle('hidden', !isTyping);
+    document.querySelector('.status-dot')?.classList.toggle('thinking', isTyping);
+
     const statusText = document.getElementById('chat-status-text');
-
-    if (indicator) indicator.classList.toggle('hidden', !isTyping);
-
-    if (statusDot) statusDot.classList.toggle('thinking', isTyping);
-    if (statusText) {
-        statusText.textContent = isTyping ? 'Đang gõ...' : 'Sẵn sàng trò chuyện';
-    }
+    if (statusText) statusText.textContent = isTyping ? 'Đang gõ...' : 'Sẵn sàng trò chuyện';
 
     const sendBtn = document.getElementById('btn-send-chat');
     if (sendBtn) sendBtn.disabled = isTyping;
@@ -287,17 +474,20 @@ function setTyping(isTyping) {
 
 function updateChatStatusUI() {
     const statusText = document.getElementById('chat-status-text');
-    const statusDot = document.querySelector('.status-dot');
+    const statusDot  = document.querySelector('.status-dot');
     if (!statusText || !statusDot) return;
 
-    if (geminiApiKey) {
-        statusText.textContent = 'Sẵn sàng trò chuyện';
-        statusDot.style.background = '#4ade80';
-        statusDot.style.boxShadow = '0 0 6px rgba(74, 222, 128, 0.7)';
+    const hasKey = hasAnyKey();
+    const p = PROVIDERS[activeProvider];
+
+    if (hasKey) {
+        statusText.textContent = `${p.icon} ${p.label}`;
+        statusDot.style.background = p.color;
+        statusDot.style.boxShadow = `0 0 8px ${p.color}88`;
     } else {
         statusText.textContent = '⚙️ Chưa cài API Key';
         statusDot.style.background = '#f59e0b';
-        statusDot.style.boxShadow = '0 0 6px rgba(245, 158, 11, 0.7)';
+        statusDot.style.boxShadow = '0 0 6px rgba(245,158,11,0.7)';
     }
 }
 
@@ -310,20 +500,14 @@ function escapeHtml(str) {
 }
 
 // =============================================
-// LIVE2D MODEL REACTION (optional)
+// LIVE2D REACTION
 // =============================================
-function triggerModelReaction(type) {
-    // Trigger a random motion when AI responds
+function triggerModelReaction() {
     try {
         if (typeof model !== 'undefined' && model) {
-            // Small delay so the bubble appears first
             setTimeout(() => {
-                try {
-                    model.motion('TapBody', 0);
-                } catch (_) {
-                    // fallback to any motion
-                    try { model.motion('Idle', 0); } catch (_) {}
-                }
+                try { model.motion('TapBody', 0); }
+                catch (_) { try { model.motion('Idle', 0); } catch (_) {} }
             }, 300);
         }
     } catch (_) {}
