@@ -6,7 +6,45 @@
 // =============================================
 // CONSTANTS & CONFIG
 // =============================================
-const SYSTEM_PROMPT = `Bạn là IceGirl — một cô gái AI dễ thương, duyên dáng và tinh nghịch, gắn liền với nhân vật Live2D trong giao diện viewer. Hãy trả lời theo phong cách của IceGirl: thân thiện, duyên dáng, đôi khi tinh nghịch, thỉnh thoảng dùng emoji nhẹ nhàng (💙🌸✨😊). Giữ câu trả lời ngắn gọn, tự nhiên và thú vị. Trả lời bằng tiếng Việt trừ khi người dùng dùng ngôn ngữ khác.`;
+const SYSTEM_PROMPT = `Bạn là IceGirl — một cô gái AI dễ thương, duyên dáng và tinh nghịch, gắn liền với nhân vật Live2D trong giao diện viewer. Hãy trả lời theo phong cách của IceGirl: thân thiện, duyên dáng, đôi khi tinh nghịch, thỉnh thoảng dùng emoji nhẹ nhàng (💙🌸✨😊). Giữ câu trả lời ngắn gọn, tự nhiên và thú vị. Trả lời bằng tiếng Việt.`;
+
+function getSystemPrompt() {
+    if (window.i18n && typeof window.i18n.t === 'function') {
+        return window.i18n.t('system_prompt');
+    }
+    return SYSTEM_PROMPT;
+}
+
+function renderSuggestions() {
+    const container = document.getElementById('chat-suggestions');
+    if (!container) return;
+
+    if (window.i18n && typeof window.i18n.t === 'function') {
+        const chips = [
+            { label: window.i18n.t('suggestion_1'), msg: window.i18n.t('suggestion_1_msg') },
+            { label: window.i18n.t('suggestion_2'), msg: window.i18n.t('suggestion_2_msg') },
+            { label: window.i18n.t('suggestion_3'), msg: window.i18n.t('suggestion_3_msg') },
+            { label: window.i18n.t('suggestion_4'), msg: window.i18n.t('suggestion_4_msg') },
+        ];
+
+        container.innerHTML = chips.map(c => 
+            `<button class="suggestion-chip" data-msg="${c.msg}">${c.label}</button>`
+        ).join('');
+
+        container.querySelectorAll('.suggestion-chip').forEach(chip => {
+            chip.addEventListener('click', () => {
+                const text = chip.getAttribute('data-msg');
+                if (text) {
+                    const input = document.getElementById('chat-input');
+                    if (input) {
+                        input.value = text;
+                        handleSend();
+                    }
+                }
+            });
+        });
+    }
+}
 
 const PROVIDERS = {
     gemini: {
@@ -84,6 +122,19 @@ Object.keys(PROVIDERS).forEach(pid => {
 document.addEventListener('DOMContentLoaded', () => {
     setupChatListeners();
     updateChatStatusUI();
+    renderSuggestions();
+});
+
+window.addEventListener('icegirl_lang_change', () => {
+    renderSuggestions();
+    
+    // Update initial greeting message if chat history is empty
+    if (chatHistory.length === 0) {
+        const greetingEl = document.querySelector('#chat-messages .chat-msg.ai .msg-text[data-i18n="chat_greeting"]');
+        if (greetingEl && window.i18n) {
+            greetingEl.textContent = window.i18n.t('chat_greeting');
+        }
+    }
 });
 
 // =============================================
@@ -134,7 +185,8 @@ function setupChatListeners() {
     document.getElementById('btn-clear-chat')?.addEventListener('click', () => {
         chatHistory = [];
         document.getElementById('chat-messages').innerHTML = '';
-        appendMessage('ai', 'Hội thoại đã được xóa! Bạn muốn nói gì với tôi nào? 💙');
+        const clearedMsg = window.i18n ? window.i18n.t('chat_cleared') : 'Hội thoại đã được xóa! Bạn muốn nói gì với tôi nào? 💙';
+        appendMessage('ai', clearedMsg);
     });
 
     // Settings
@@ -153,20 +205,6 @@ function setupChatListeners() {
             document.getElementById('chat-panel')?.classList.remove('open');
             document.getElementById('btn-toggle-chat')?.classList.remove('active');
         }
-    });
-
-    // Quick Prompt Chips Click Handler
-    document.querySelectorAll('.suggestion-chip').forEach(chip => {
-        chip.addEventListener('click', () => {
-            const text = chip.getAttribute('data-msg');
-            if (text) {
-                const input = document.getElementById('chat-input');
-                if (input) {
-                    input.value = text;
-                    handleSend();
-                }
-            }
-        });
     });
 
     // Save & Delete buttons
@@ -327,13 +365,12 @@ async function callGemini(userText) {
     const model = selectedModel['gemini'];
     const url   = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`;
 
-    // Build payload with official systemInstruction parameter
     const res = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
             systemInstruction: {
-                parts: [{ text: SYSTEM_PROMPT }]
+                parts: [{ text: getSystemPrompt() }]
             },
             contents: chatHistory.map(m => ({
                 role: m.role === 'assistant' ? 'model' : 'user',
@@ -360,7 +397,7 @@ async function callOpenRouter(userText) {
     const model = selectedModel['openrouter'];
 
     const messages = [
-        { role: 'system', content: SYSTEM_PROMPT },
+        { role: 'system', content: getSystemPrompt() },
         ...chatHistory.map(m => ({ role: m.role === 'assistant' ? 'assistant' : 'user', content: m.content })),
     ];
 
@@ -397,7 +434,7 @@ async function callCohere(userText) {
     const model = selectedModel['cohere'];
 
     const messages = [
-        { role: 'system', content: SYSTEM_PROMPT },
+        { role: 'system', content: getSystemPrompt() },
         ...chatHistory.map(m => ({
             role: m.role === 'assistant' ? 'chatbot' : 'user',
             content: m.content,
@@ -490,7 +527,15 @@ function setTyping(isTyping) {
     document.querySelector('.status-dot')?.classList.toggle('thinking', isTyping);
 
     const statusText = document.getElementById('chat-status-text');
-    if (statusText) statusText.textContent = isTyping ? 'Đang gõ...' : 'Sẵn sàng trò chuyện';
+    if (statusText) {
+        if (isTyping) {
+            statusText.textContent = window.i18n ? window.i18n.t('chat_status_thinking') : 'IceGirl đang suy nghĩ...';
+        } else {
+            const hasKey = hasAnyKey();
+            const p = PROVIDERS[activeProvider];
+            statusText.textContent = hasKey ? `${p.icon} ${p.label}` : (window.i18n ? window.i18n.t('chat_status_ready') : 'Sẵn sàng trò chuyện');
+        }
+    }
 
     const sendBtn = document.getElementById('btn-send-chat');
     if (sendBtn) sendBtn.disabled = isTyping;

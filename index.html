@@ -37,7 +37,7 @@
                 </div>
                 <div class="logo-text-group">
                     <span class="logo-title">IceGirl <span class="logo-accent">Live2D</span></span>
-                    <span class="logo-version">Cubism 4 • Interactive</span>
+                    <span class="logo-version" data-i18n="brand_subtitle">Cubism 4 • Interactive</span>
                 </div>
             </div>
         </div>
@@ -46,7 +46,7 @@
             <!-- Floating hint indicator -->
             <div class="interaction-hint" id="interaction-hint">
                 <svg viewBox="0 0 24 24" fill="none" class="hint-icon"><path d="M15 15L19 19M12 4V2M4 12H2M20 12H22M5.636 5.636L4.222 4.222M18.364 5.636L19.778 4.222M7 12C7 9.23858 9.23858 7 12 7C14.7614 7 17 9.23858 17 12C17 14.7614 14.7614 17 12 17C9.23858 17 7 14.7614 7 12Z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-                <span>Giữ chuột trái di chuyển • Cuộn chuột zoom</span>
+                <span data-i18n="interaction_hint">Giữ chuột trái di chuyển • Cuộn chuột zoom</span>
             </div>
         </div>
 
@@ -56,13 +56,33 @@
                 <button class="theme-dot" data-theme="1" title="Băng Tuyết Tinh Thể (Ice Frost Crystal)" style="background: linear-gradient(135deg, #38bdf8, #0369a1);"></button>
                 <button class="theme-dot" data-theme="2" title="Cực Quang Băng Giá (Aurora Teal)" style="background: linear-gradient(135deg, #22d3ee, #0f766e);"></button>
                 <button class="theme-dot" data-theme="3" title="Hoa Băng Huyền Diệu (Icy Lavender)" style="background: linear-gradient(135deg, #c084fc, #581c87);"></button>
-                <button class="theme-dot" data-theme="4" title="Anh Đào Băng (Snow Sakura Pink)" style="background: linear-gradient(135deg, #f472b6, #831843);"></button>
+                <button class="theme-dot" data-theme="4" title="Anh Đào Băng (Snow Sakura Pink)" style="background: linear-gradient(135deg, #f472b6, #831843);"></style>
                 <button class="theme-dot" data-theme="5" title="Đêm Đông Tuyết Rơi (Frozen Midnight)" style="background: linear-gradient(135deg, #60a5fa, #1e293b);"></button>
                 <button class="theme-dot" data-theme="6" title="Đại Dương Băng Giá (Deep Glacier)" style="background: linear-gradient(135deg, #0284c7, #075985);"></button>
                 <button class="theme-dot" data-theme="7" title="Chroma Green (Tách nền OBS Studio)" style="background: #00ff00;"></button>
             </div>
+
+            <!-- Language Dropdown Selector -->
+            <div class="lang-selector" id="lang-selector">
+                <button class="lang-btn" id="btn-lang-toggle" title="Language / Ngôn ngữ">
+                    <span class="lang-flag" id="current-lang-flag">🇻🇳</span>
+                    <span class="lang-text" id="current-lang-text">VI</span>
+                    <svg class="lang-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+                </button>
+                <div class="lang-dropdown hidden" id="lang-dropdown">
+                    <button class="lang-option active" data-lang="vi"><span class="opt-flag">🇻🇳</span> Tiếng Việt</button>
+                    <button class="lang-option" data-lang="en"><span class="opt-flag">🇬🇧</span> English</button>
+                    <button class="lang-option" data-lang="ja"><span class="opt-flag">🇯🇵</span> 日本語</button>
+                    <button class="lang-option" data-lang="zh"><span class="opt-flag">🇨🇳</span> 中文</button>
+                    <button class="lang-option" data-lang="ko"><span class="opt-flag">🇰🇷</span> 한국어</button>
+                    <button class="lang-option" data-lang="fr"><span class="opt-flag">🇫🇷</span> Français</button>
+                    <button class="lang-option" data-lang="es"><span class="opt-flag">🇪🇸</span> Español</button>
+                    <button class="lang-option" data-lang="de"><span class="opt-flag">🇩🇪</span> Deutsch</button>
+                    <button class="lang-option" data-lang="ru"><span class="opt-flag">🇷🇺</span> Русский</button>
+                </div>
+            </div>
             
-            <button class="header-icon-btn" id="btn-fullscreen-header" title="Toàn màn hình" aria-label="Bật toàn màn hình">
+            <button class="header-icon-btn" id="btn-fullscreen-header" data-i18n-title="btn_fullscreen" title="Toàn màn hình" aria-label="Bật toàn màn hình">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>
                 </svg>
@@ -76,7 +96,7 @@
             <div class="loader"></div>
             <div class="loader-core">💙</div>
         </div>
-        <div class="loading-text">Đang kết nối mô hình Live2D IceGirl...</div>
+        <div class="loading-text" data-i18n="loading_model">Đang kết nối mô hình Live2D IceGirl...</div>
         <div class="loading-progress-bar"><div class="progress-fill"></div></div>
     </div>
 
@@ -85,7 +105,7 @@
         <div class="sidebar-title">
             <div class="sidebar-title-left">
                 <span class="sidebar-icon">🎭</span>
-                <span>Biểu Cảm & Phụ Kiện</span>
+                <span data-i18n="sidebar_left_title">Biểu Cảm & Phụ Kiện</span>
             </div>
             <button class="close-sidebar-btn" id="btn-close-left-sidebar" title="Ẩn thanh công cụ">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 18l-6-6 6-6"/></svg>
@@ -94,7 +114,7 @@
         <div class="scroll-area" id="expressions-container">
             <div class="sidebar-placeholder">
                 <div class="spinner-sm"></div>
-                <span>Đang quét biểu cảm...</span>
+                <span data-i18n="loading_expressions">Đang quét biểu cảm...</span>
             </div>
         </div>
     </aside>
@@ -109,7 +129,7 @@
         <div class="sidebar-title">
             <div class="sidebar-title-left">
                 <span class="sidebar-icon">⚡</span>
-                <span>Chuyển Động (Motions)</span>
+                <span data-i18n="sidebar_right_title">Chuyển Động (Motions)</span>
             </div>
             <button class="close-sidebar-btn" id="btn-close-right-sidebar" title="Ẩn thanh công cụ">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg>
@@ -118,7 +138,7 @@
         <div class="scroll-area" id="motions-container">
             <div class="sidebar-placeholder">
                 <div class="spinner-sm"></div>
-                <span>Đang tải chuyển động...</span>
+                <span data-i18n="loading_motions">Đang tải chuyển động...</span>
             </div>
         </div>
     </aside>
@@ -133,41 +153,41 @@
 
     <!-- ===== FLOATING DOCK CONTROL PANEL ===== -->
     <nav class="control-panel" id="control-panel">
-        <button class="control-btn" id="btn-hide-dock" data-tooltip="Ẩn thanh công cụ" aria-label="Ẩn thanh công cụ">
+        <button class="control-btn" id="btn-hide-dock" data-i18n-tooltip="dock_hide" data-tooltip="Ẩn thanh công cụ" aria-label="Ẩn thanh công cụ">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
         </button>
         
         <div class="control-divider"></div>
 
-        <button class="control-btn" id="btn-zoom-in" data-tooltip="Phóng to" aria-label="Phóng to mô hình">
+        <button class="control-btn" id="btn-zoom-in" data-i18n-tooltip="dock_zoom_in" data-tooltip="Phóng to" aria-label="Phóng to mô hình">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
         </button>
         
-        <button class="control-btn" id="btn-zoom-out" data-tooltip="Thu nhỏ" aria-label="Thu nhỏ mô hình">
+        <button class="control-btn" id="btn-zoom-out" data-i18n-tooltip="dock_zoom_out" data-tooltip="Thu nhỏ" aria-label="Thu nhỏ mô hình">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/></svg>
         </button>
         
-        <button class="control-btn" id="btn-reset" data-tooltip="Căn giữa mô hình" aria-label="Đặt lại vị trí gốc">
+        <button class="control-btn" id="btn-reset" data-i18n-tooltip="dock_reset" data-tooltip="Căn giữa mô hình" aria-label="Đặt lại vị trí gốc">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
         </button>
         
         <div class="control-divider"></div>
         
-        <button class="control-btn" id="btn-look-center" data-tooltip="Khóa nhìn thẳng" aria-label="Khoá nhìn thẳng">
+        <button class="control-btn" id="btn-look-center" data-i18n-tooltip="dock_look_center" data-tooltip="Khóa nhìn thẳng" aria-label="Khoá nhìn thẳng">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
         </button>
         
-        <button class="control-btn" id="btn-change-bg" data-tooltip="Đổi màu nền" aria-label="Đổi màu nền background">
+        <button class="control-btn" id="btn-change-bg" data-i18n-tooltip="dock_change_bg" data-tooltip="Đổi màu nền" aria-label="Đổi màu nền background">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
         </button>
         
-        <button class="control-btn" id="btn-toggle-sidebar" data-tooltip="Ẩn/Hiện Menu (Tab)" aria-label="Ẩn hoặc hiện thanh công cụ">
+        <button class="control-btn" id="btn-toggle-sidebar" data-i18n-tooltip="dock_toggle_sidebar" data-tooltip="Ẩn/Hiện Menu (Tab)" aria-label="Ẩn hoặc hiện thanh công cụ">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18"/></svg>
         </button>
         
         <div class="control-divider"></div>
         
-        <button class="control-btn chat-toggle-btn" id="btn-toggle-chat" data-tooltip="Mở Trò Chuyện AI" aria-label="Mở hoặc đóng trò chuyện AI">
+        <button class="control-btn chat-toggle-btn" id="btn-toggle-chat" data-i18n-tooltip="dock_toggle_chat" data-tooltip="Mở Trò Chuyện AI" aria-label="Mở hoặc đóng trò chuyện AI">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
             <span class="chat-badge-pulse"></span>
         </button>
@@ -189,17 +209,17 @@
                 <div class="chat-name">IceGirl AI Assistant</div>
                 <div class="chat-status" id="chat-status">
                     <span class="status-dot"></span>
-                    <span id="chat-status-text">Sẵn sàng trò chuyện</span>
+                    <span id="chat-status-text" data-i18n="chat_status_ready">Sẵn sàng trò chuyện</span>
                 </div>
             </div>
             <div class="chat-header-actions">
-                <button class="chat-icon-btn" id="btn-chat-settings" title="Cài đặt API Key & Provider">
+                <button class="chat-icon-btn" id="btn-chat-settings" data-i18n-title="btn_chat_settings" title="Cài đặt API Key & Provider">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
                 </button>
-                <button class="chat-icon-btn" id="btn-clear-chat" title="Xóa đoạn hội thoại">
+                <button class="chat-icon-btn" id="btn-clear-chat" data-i18n-title="btn_clear_chat" title="Xóa đoạn hội thoại">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
                 </button>
-                <button class="chat-icon-btn close-chat" id="btn-close-chat" title="Thu nhỏ chat">
+                <button class="chat-icon-btn close-chat" id="btn-close-chat" data-i18n-title="btn_close_chat" title="Thu nhỏ chat">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                 </button>
             </div>
@@ -207,10 +227,7 @@
 
         <!-- Quick Prompt Chips Row -->
         <div class="chat-suggestions" id="chat-suggestions">
-            <button class="suggestion-chip" data-msg="Xin chào! Bạn là ai thế? 🌸">👋 Chào hỏi</button>
-            <button class="suggestion-chip" data-msg="Cười một cái thật tươi cho mình xem nào! 💖">💖 Cười lên nào</button>
-            <button class="suggestion-chip" data-msg="Bạn có phụ kiện hay biểu cảm nào đẹp không? ✨">✨ Phụ kiện</button>
-            <button class="suggestion-chip" data-msg="Tạo một dáng thật đáng yêu đi! 📸">📸 Tạo dáng</button>
+            <!-- Rendered dynamically by chat.js & i18n -->
         </div>
 
         <!-- Messages Area -->
@@ -218,7 +235,7 @@
             <div class="chat-msg ai">
                 <div class="msg-avatar-icon">🌸</div>
                 <div class="msg-bubble">
-                    <p class="msg-text">Xin chào! Tôi là IceGirl 💙 Rất vui được gặp bạn! Hãy hỏi tôi bất cứ điều gì hoặc sử dụng các gợi ý bên trên nhé~</p>
+                    <p class="msg-text" data-i18n="chat_greeting">Xin chào! Tôi là IceGirl 💙 Rất vui được gặp bạn! Hãy hỏi tôi bất cứ điều gì hoặc sử dụng các gợi ý bên trên nhé~</p>
                     <span class="msg-time">Vừa xong</span>
                 </div>
             </div>
@@ -227,10 +244,10 @@
         <div class="chat-footer">
             <div class="typing-indicator hidden" id="typing-indicator">
                 <div class="typing-dots"><span></span><span></span><span></span></div>
-                <span class="typing-text">IceGirl đang suy nghĩ...</span>
+                <span class="typing-text" data-i18n="chat_status_thinking">IceGirl đang suy nghĩ...</span>
             </div>
             <div class="chat-input-row">
-                <textarea class="chat-textarea" id="chat-input" placeholder="Nhắn tin với IceGirl..." rows="1"></textarea>
+                <textarea class="chat-textarea" id="chat-input" data-i18n-placeholder="chat_placeholder" placeholder="Nhắn tin với IceGirl..." rows="1"></textarea>
                 <button class="chat-send-btn" id="btn-send-chat" title="Gửi tin nhắn (Enter)">
                     <svg viewBox="0 0 24 24" fill="none">
                         <path d="M22 2L11 13" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
@@ -248,8 +265,8 @@
 
             <div class="modal-header-section">
                 <div class="modal-icon-wrap">🤖</div>
-                <h3 class="modal-title">Cấu hình AI Intelligence</h3>
-                <p class="modal-desc">Chọn Nhà cung cấp AI (Provider), điền API Key và chọn Model mong muốn. Key được bảo mật lưu trên trình duyệt cá nhân. 🔒</p>
+                <h3 class="modal-title" data-i18n="modal_title">Cấu hình AI Intelligence</h3>
+                <p class="modal-desc" data-i18n="modal_desc">Chọn Nhà cung cấp AI (Provider), điền API Key và chọn Model mong muốn. Key được bảo mật lưu trên trình duyệt cá nhân. 🔒</p>
             </div>
 
             <!-- Provider Tabs -->
@@ -259,13 +276,13 @@
 
             <!-- API Key Input -->
             <div class="settings-field">
-                <label class="settings-label">API Key Khóa Truy Cập</label>
-                <input class="modal-input" id="api-key-input" type="password" placeholder="Nhập API Key vào đây..." autocomplete="off"/>
+                <label class="settings-label" data-i18n="label_api_key">API Key Khóa Truy Cập</label>
+                <input class="modal-input" id="api-key-input" type="password" data-i18n-placeholder="placeholder_api_key" placeholder="Nhập API Key vào đây..." autocomplete="off"/>
             </div>
 
             <!-- Model Select -->
             <div class="settings-field">
-                <label class="settings-label">Mô Hình AI (Model)</label>
+                <label class="settings-label" data-i18n="label_model">Mô Hình AI (Model)</label>
                 <select class="modal-select" id="model-select"></select>
             </div>
 
@@ -273,13 +290,14 @@
             <a class="modal-link" id="api-link" href="#" target="_blank" rel="noopener"></a>
 
             <div class="modal-footer">
-                <button class="modal-btn danger" id="btn-delete-api" title="Xóa API Key khỏi trình duyệt">🗑️ Xóa Key</button>
-                <button class="modal-btn primary" id="btn-save-api">💾 Lưu Cấu Hình &amp; Kết Nối</button>
+                <button class="modal-btn danger" id="btn-delete-api" data-i18n="btn_delete_key" title="Xóa API Key khỏi trình duyệt">🗑️ Xóa Key</button>
+                <button class="modal-btn primary" id="btn-save-api" data-i18n="btn_save_key">💾 Lưu Cấu Hình &amp; Kết Nối</button>
             </div>
         </div>
     </div>
 
     <!-- App Scripts -->
+    <script src="i18n.js?v=20"></script>
     <script src="app.js?v=20"></script>
     <script src="chat.js?v=20"></script>
 </body>

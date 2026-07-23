@@ -207,6 +207,109 @@ html, body {
     border: 1px solid var(--glass-border);
 }
 
+/* Language Selector Dropdown */
+.lang-selector {
+    position: relative;
+}
+
+.lang-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    height: 34px;
+    padding: 0 12px;
+    border-radius: var(--radius-pill);
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid var(--glass-border);
+    color: var(--text-primary);
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition-fast);
+    backdrop-filter: blur(10px);
+}
+
+.lang-btn:hover {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: var(--cyan-border);
+    box-shadow: 0 0 10px var(--cyan-glow);
+}
+
+.lang-flag { font-size: 1rem; line-height: 1; }
+.lang-text { letter-spacing: 0.5px; }
+
+.lang-arrow {
+    width: 12px;
+    height: 12px;
+    transition: transform 0.2s ease;
+    color: var(--text-muted);
+}
+
+.lang-selector.open .lang-arrow {
+    transform: rotate(180deg);
+}
+
+.lang-dropdown {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    min-width: 150px;
+    max-height: 340px;
+    overflow-y: auto;
+    background: rgba(14, 10, 32, 0.94);
+    backdrop-filter: blur(20px) saturate(1.8);
+    -webkit-backdrop-filter: blur(20px) saturate(1.8);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-md);
+    padding: 6px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4), 0 0 15px rgba(56, 189, 248, 0.1);
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    z-index: 100;
+    transform-origin: top right;
+    animation: dropdownFadeIn 0.2s ease-out;
+}
+
+.lang-dropdown.hidden {
+    display: none;
+}
+
+@keyframes dropdownFadeIn {
+    from { opacity: 0; transform: scale(0.92) translateY(-6px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.lang-option {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    border-radius: var(--radius-sm);
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 0.82rem;
+    font-weight: 500;
+    cursor: pointer;
+    text-align: left;
+    transition: var(--transition-fast);
+}
+
+.lang-option:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--text-primary);
+}
+
+.lang-option.active {
+    background: linear-gradient(135deg, rgba(56, 189, 248, 0.2), rgba(167, 139, 250, 0.2));
+    border: 1px solid var(--cyan-border);
+    color: var(--cyan);
+    font-weight: 600;
+}
+
+.opt-flag { font-size: 1.1rem; }
+
 .theme-dot {
     width: 18px;
     height: 18px;
