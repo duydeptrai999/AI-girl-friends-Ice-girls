@@ -146,6 +146,29 @@ function setupChatListeners() {
         if (e.target === document.getElementById('api-key-modal')) closeSettingsModal();
     });
 
+    // Global ESC key to close modal and chat
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Escape') {
+            closeSettingsModal();
+            document.getElementById('chat-panel')?.classList.remove('open');
+            document.getElementById('btn-toggle-chat')?.classList.remove('active');
+        }
+    });
+
+    // Quick Prompt Chips Click Handler
+    document.querySelectorAll('.suggestion-chip').forEach(chip => {
+        chip.addEventListener('click', () => {
+            const text = chip.getAttribute('data-msg');
+            if (text) {
+                const input = document.getElementById('chat-input');
+                if (input) {
+                    input.value = text;
+                    handleSend();
+                }
+            }
+        });
+    });
+
     // Save button
     document.getElementById('btn-save-api')?.addEventListener('click', saveSettings);
 }
@@ -276,7 +299,7 @@ async function handleSend() {
 
         chatHistory.push({ role: 'assistant', content: reply });
         appendMessage('ai', reply);
-        triggerModelReaction();
+        triggerModelReaction(reply);
     } catch (err) {
         console.error(`[${activeProvider}] API error:`, err);
         appendMessage('ai', formatError(err.message));
@@ -296,21 +319,18 @@ async function callGemini(userText) {
     const model = selectedModel['gemini'];
     const url   = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`;
 
-    // Build contents: system-turn pair + history
-    const contents = [
-        { role: 'user',  parts: [{ text: SYSTEM_PROMPT }] },
-        { role: 'model', parts: [{ text: 'Hiểu rồi! Tôi sẽ đóng vai IceGirl 🌸' }] },
-        ...chatHistory.map(m => ({
-            role: m.role === 'assistant' ? 'model' : 'user',
-            parts: [{ text: m.content }],
-        })),
-    ];
-
+    // Build payload with official systemInstruction parameter
     const res = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-            contents,
+            systemInstruction: {
+                parts: [{ text: SYSTEM_PROMPT }]
+            },
+            contents: chatHistory.map(m => ({
+                role: m.role === 'assistant' ? 'model' : 'user',
+                parts: [{ text: m.content }],
+            })),
             generationConfig: { temperature: 0.85, maxOutputTokens: 512, topP: 0.95 },
         }),
     });
@@ -429,17 +449,15 @@ function appendMessage(role, text) {
     const now  = new Date();
     const time = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
 
-    // Bold **text** support
-    const formatted = escapeHtml(text)
-        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-        .replace(/\n/g, '<br>');
+    // Formatted markdown text
+    const formatted = formatMarkdown(text);
 
     const msgEl = document.createElement('div');
     msgEl.className = `chat-msg ${isAI ? 'ai' : 'user'}`;
     msgEl.innerHTML = `
         <div class="msg-avatar-icon">${isAI ? getProviderIcon() : '🙋'}</div>
         <div class="msg-bubble">
-            <p class="msg-text">${formatted}</p>
+            <div class="msg-text">${formatted}</div>
             <span class="msg-time">${time} ${isAI ? '· ' + (PROVIDERS[activeProvider]?.label || '') : ''}</span>
         </div>`;
 
@@ -496,19 +514,52 @@ function escapeHtml(str) {
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
+function formatMarkdown(text) {
+    let safe = escapeHtml(text);
+    // Code blocks ```lang\ncode```
+    safe = safe.replace(/```(?:[a-zA-Z0-9_-]+)?\n?([\s\S]*?)```/g, '<pre class="chat-code-block"><code>$1</code></pre>');
+    // Inline code `code`
+    safe = safe.replace(/`([^`]+)`/g, '<code class="chat-inline-code">$1</code>');
+    // Bold **text**
+    safe = safe.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+    // Italic *text*
+    safe = safe.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+    // Bullet points
+    safe = safe.replace(/^[ \t]*[-*][ \t]+(.+)$/gm, '• $1');
+    // Newlines to <br>
+    safe = safe.replace(/\n/g, '<br>');
+    return safe;
 }
 
 // =============================================
 // LIVE2D REACTION
 // =============================================
-function triggerModelReaction() {
+function triggerModelReaction(text = '') {
     try {
-        if (typeof model !== 'undefined' && model) {
-            setTimeout(() => {
-                try { model.motion('TapBody', 0); }
-                catch (_) { try { model.motion('Idle', 0); } catch (_) {} }
-            }, 300);
-        }
+        if (typeof model === 'undefined' || !model) return;
+        const lower = text.toLowerCase();
+
+        setTimeout(() => {
+            try {
+                if (lower.includes('ngạc nhiên') || lower.includes('wow') || lower.includes('ôi') || lower.includes('thật sao')) {
+                    model.motion('TapBody', 1);
+                    if (typeof triggerExpressionByName === 'function') triggerExpressionByName('惊讶');
+                } else if (lower.includes('thích') || lower.includes('yêu') || lower.includes('thương') || lower.includes('dễ thương') || lower.includes('🌸') || lower.includes('💙')) {
+                    model.motion('TapBody', 0);
+                    if (typeof triggerExpressionByName === 'function') triggerExpressionByName('爱心眼');
+                } else if (lower.includes('ngượng') || lower.includes('ngại') || lower.includes('hihi') || lower.includes('xấu hổ')) {
+                    model.motion('TapBody', 0);
+                    if (typeof triggerExpressionByName === 'function') triggerExpressionByName('脸红');
+                } else {
+                    model.motion('TapBody', 0);
+                }
+            } catch (_) {
+                try { model.motion('Idle', 0); } catch (_) {}
+            }
+        }, 300);
     } catch (_) {}
 }

@@ -1,6 +1,15 @@
 let app;
 let model;
 let lookLocked = false; // Khi bật: khoá nhìn thẳng, không theo chuột
+let _currentMotionGroup = 'Idle'; // Theo dõi nhóm motion đang chạy
+
+// Parameters chỉ được điều khiển bởi TapBody motions, KHÔNG bởi Idle.
+// Khi Idle đang chạy, phải reset chúng về giá trị mặc định.
+const TAP_BODY_PARAMS = [
+    { id: 'Param58', defaultVal: 0 },  // Hướng vẫy tay (HuiShou)
+    { id: 'Param59', defaultVal: 0 },  // Giơ tay lên/xuống (HuiShou)
+    { id: 'Param60', defaultVal: 0 },  // Nháy mắt quyến rũ (MeiYan)
+];
 
 const modelUrl = './IceGIrl Live2D/IceGirl.model3.json?v=' + Date.now();
 
@@ -35,6 +44,14 @@ function vn(name) {
     return nameTranslation[name] || name;
 }
 
+// Helper kích hoạt biểu cảm bằng tên từ module bên ngoài (vd: chat.js)
+function triggerExpressionByName(expName) {
+    if (!model) return;
+    try {
+        model.expression(expName);
+    } catch (_) {}
+}
+
 // Danh sách tên phụ kiện (sẽ toggle độc lập, không loại trừ lẫn nhau)
 const accessoryKeys = ["猫耳", "王冠", "翅膀", "手柄", "直播套装", "马尾", "披发"];
 
@@ -66,40 +83,23 @@ function setupPixi() {
         preserveDrawingBuffer: false,
     });
 
-    // ===== FIX TÀN ẢNH TRIỆT ĐỂ (v2) =====
-    // Root cause: Live2D Cubism 4 dùng multi-pass rendering với các FBO (framebuffer object) nội bộ
-    // cho clipping mask. Sau mỗi pass, nó bind FBO của nó, KHÔNG tự unbind về null.
-    // Hậu quả: frame trước "chảy" sang frame sau vì WebGL đang clear/render sai framebuffer.
-    //
-    // Chiến lược 2 lớp:
-    // 1. PRERENDER: Clear canvas screen (fb=null) TRƯỚC khi Pixi/Live2D vẽ frame mới.
-    // 2. POSTRENDER: Sau khi Live2D render xong, force unbind tất cả FBO nội bộ về null
-    //    và clear STENCIL buffer (dùng bởi clipping mask) để tránh stencil cũ gây artifact.
-    //    Lưu ý: KHÔNG clear COLOR ở đây vì frame vừa vẽ xong cần giữ lại để hiển thị.
-
-    const _clearScreen = () => {
+    // ===== RENDER PIPELINE FIX =====
+    // Chỉ clear screen FBO trước mỗi frame. KHÔNG đụng FBO nội bộ của Live2D.
+    app.renderer.on('prerender', () => {
         const gl = app.renderer.gl;
         if (!gl) return;
-        // Bind về screen framebuffer (null = default canvas FBO)
         gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-        gl.clearColor(0, 0, 0, 0); // trong suốt
+        gl.clearColor(0, 0, 0, 0);
         gl.colorMask(true, true, true, true);
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT | gl.STENCIL_BUFFER_BIT);
-    };
+    });
 
-    // Layer 1: Clear canvas trước mỗi frame
-    app.renderer.on('prerender', _clearScreen);
-
-    // Layer 2: Sau khi Live2D render xong — reset FBO về null + clear stencil
-    // để triệt tiêu stencil/depth artifact từ clipping mask pass trước.
+    // Sau khi render xong: chỉ reset stencil state, KHÔNG clear FBO
     app.renderer.on('postrender', () => {
         const gl = app.renderer.gl;
         if (!gl) return;
-        // Unbind mọi FBO nội bộ của Live2D
         gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-        // Chỉ clear depth+stencil — KHÔNG clear color (sẽ xoá model vừa vẽ)
         gl.clear(gl.DEPTH_BUFFER_BIT | gl.STENCIL_BUFFER_BIT);
-        // Reset stencil mask về mặc định
         gl.stencilMask(0xFF);
         gl.disable(gl.STENCIL_TEST);
     });
@@ -108,20 +108,37 @@ function setupPixi() {
         if (model) fitModel();
     });
 
-    // Ticker: Cứ mỗi frame, áp lại giá trị phụ kiện đang bật và khoá nhìn thẳng
+    // Ticker: Mỗi frame — áp phụ kiện + reset arm params khi Idle
     app.ticker.add(() => {
         if (!model) return;
         
-        // Nếu khoá nhìn thẳng, liên tục ép model focus về đúng toạ độ của nó để tránh lệch mắt do các chuyển động khác
+        // Khoá nhìn thẳng
         if (lookLocked) {
             model.focus(model.x, model.y);
         }
         
+        // ===== FIX TÀN ẢNH TAY VẪY =====
+        // ROOT CAUSE: Idle motion (DaiJi) KHÔNG điều khiển Param58/59/60.
+        // Sau khi TapBody motion kết thúc, các param này giữ giá trị cuối
+        // → tay bị đóng băng ở vị trí vẫy.
+        // FIX: Mỗi frame khi Idle đang chạy, ép Param58/59/60 về giá trị mặc định.
+        if (_currentMotionGroup === 'Idle') {
+            const core = model.internalModel.coreModel;
+            TAP_BODY_PARAMS.forEach(p => {
+                try {
+                    const currentVal = core.getParameterValueById(p.id);
+                    if (Math.abs(currentVal - p.defaultVal) > 0.001) {
+                        // Fade mượt về default thay vì snap đột ngột
+                        const lerped = currentVal + (p.defaultVal - currentVal) * 0.15;
+                        core.setParameterValueById(p.id, lerped);
+                    }
+                } catch (_) {}
+            });
+        }
+        
+        // Áp phụ kiện đang bật
         Object.entries(activeToggles).forEach(([expName, isOn]) => {
-            // QUAN TRỌNG: Chỉ can thiệp và ép giá trị parameter trong loop nếu phụ kiện ĐANG BẬT.
-            // Nếu phụ kiện tắt, để Live2D engine tự do quản lý parameter đó (tránh kẹt opacity của part gây tàn ảnh/mesh mờ).
             if (!isOn) return;
-            
             const params = preloadedParams[expName];
             if (!params) return;
             params.forEach(p => {
@@ -150,6 +167,7 @@ async function loadModel() {
         // Lắng nghe sự kiện chuyển động của model để đồng bộ nút bấm trên giao diện
         model.on('motion', (group, index) => {
             console.log(`Chuyển động thực tế đang chạy: Group=${group}, Index=${index}`);
+            _currentMotionGroup = group; // Cập nhật nhóm motion đang chạy
             document.querySelectorAll('#motions-container .action-btn').forEach(b => b.classList.remove('active'));
             
             const targetBtn = document.getElementById(`btn-motion-${group}-${index}`);
@@ -246,44 +264,53 @@ function fitModel() {
     model.y = window.innerHeight / 2 + (model.height * scale * 0.05);
 }
 
-// 6. Tương tác chuột
+// 6. Tương tác chuột & cảm ứng
 function setupModelInteraction() {
     if (!model) return;
     let isDragging = false, startX, startY, modelStartX, modelStartY;
     const container = document.getElementById('canvas-container');
+    if (!container) return;
 
-    container.addEventListener('mousemove', (e) => {
+    const onMouseMoveFocus = (e) => {
         if (!isDragging && !lookLocked) model.focus(e.clientX, e.clientY);
-    });
+    };
 
-    container.addEventListener('mousedown', (e) => {
+    const onMouseDown = (e) => {
         if (e.button === 0) {
             isDragging = true;
             startX = e.clientX; startY = e.clientY;
             modelStartX = model.x; modelStartY = model.y;
             container.style.cursor = 'grabbing';
         }
-    });
+    };
 
-    window.addEventListener('mousemove', (e) => {
+    const onWindowMouseMove = (e) => {
         if (isDragging) {
             model.x = modelStartX + (e.clientX - startX);
             model.y = modelStartY + (e.clientY - startY);
         }
-    });
+    };
 
-    window.addEventListener('mouseup', () => {
-        isDragging = false;
-        container.style.cursor = 'grab';
-    });
+    const onWindowMouseUp = () => {
+        if (isDragging) {
+            isDragging = false;
+            container.style.cursor = 'grab';
+        }
+    };
 
-    container.addEventListener('wheel', (e) => {
+    const onWheelZoom = (e) => {
         e.preventDefault();
         const speed = 0.08;
         let s = model.scale.x + (e.deltaY < 0 ? 1 : -1) * model.scale.x * speed;
         s = Math.max(0.05, Math.min(3.0, s));
         model.scale.set(s);
-    }, { passive: false });
+    };
+
+    container.addEventListener('mousemove', onMouseMoveFocus);
+    container.addEventListener('mousedown', onMouseDown);
+    window.addEventListener('mousemove', onWindowMouseMove);
+    window.addEventListener('mouseup', onWindowMouseUp);
+    container.addEventListener('wheel', onWheelZoom, { passive: false });
 }
 
 // 7. Render sidebar
@@ -407,6 +434,20 @@ function populateSidebars(expressions) {
     grid.className = 'btn-grid';
     grid.id = 'motions-grid';
 
+    // Helper: chạy motion và tự quay về Idle khi xong
+    function playMotionAndReturn(group, index) {
+        _currentMotionGroup = group;
+        console.log('Chạy:', group, index);
+        model.motion(group, index).then(() => {
+            // Motion đã kết thúc (Loop:false cho phép Promise resolve)
+            console.log(`[FIX] Motion ${group}/${index} xong → quay về Idle`);
+            _currentMotionGroup = 'Idle';
+            // Ticker sẽ tự fade Param58/59/60 về mặc định
+        }).catch(() => {
+            _currentMotionGroup = 'Idle';
+        });
+    }
+
     // Nút chuyển động Ngẫu nhiên 🎲
     const randomBtn = createBtn('Ngẫu nhiên 🎲', false, () => {
         const activeGroups = motionKeys.filter(k => k !== "Idle");
@@ -415,7 +456,7 @@ function populateSidebars(expressions) {
             const list = motionGroups[randomGroup];
             if (list && list.length > 0) {
                 const randomIndex = Math.floor(Math.random() * list.length);
-                model.motion(randomGroup, randomIndex);
+                playMotionAndReturn(randomGroup, randomIndex);
             }
         }
     });
@@ -428,8 +469,7 @@ function populateSidebars(expressions) {
             const rawLabel = `${groupName} ${index + 1}`;
             const viLabel  = vn(rawLabel);
             const btn = createBtn(viLabel, false, () => {
-                model.motion(groupName, index);
-                console.log("Chạy:", groupName, index);
+                playMotionAndReturn(groupName, index);
             });
             btn.id = `btn-motion-${groupName}-${index}`;
             grid.appendChild(btn);
@@ -509,17 +549,54 @@ function setupControls() {
         setRightSidebarCollapsed(shouldCollapseAll);
     });
 
+    // Phím tắt & Top Header Handlers
     const bgs = [
-        'linear-gradient(135deg, #0f0c1b 0%, #15102a 50%, #06050b 100%)',
-        'linear-gradient(135deg, #1A1C29 0%, #32253F 50%, #141124 100%)',
-        'linear-gradient(135deg, #0d1b2a 0%, #1b263b 50%, #415a77 100%)',
-        '#050505', '#ffffff', '#00ff00'
+        'radial-gradient(ellipse at 30% 20%, #160a2e 0%, #060417 60%, #09031c 100%)',
+        'radial-gradient(ellipse at 30% 20%, #2a0825 0%, #0c0419 60%, #170414 100%)',
+        'radial-gradient(ellipse at 30% 20%, #0d1b2a 0%, #050a14 60%, #081220 100%)',
+        '#00ff00' // Chroma Green (OBS)
     ];
     let bgIdx = 0;
-    document.getElementById('btn-change-bg')?.addEventListener('click', () => {
-        bgIdx = (bgIdx + 1) % bgs.length;
+
+    const setBackground = (idx) => {
+        bgIdx = idx % bgs.length;
         document.body.style.background = bgs[bgIdx];
-        document.body.style.color = (bgs[bgIdx] === '#ffffff' || bgs[bgIdx] === '#00ff00') ? '#333' : 'var(--text-color)';
+        
+        // Highlight active theme dot
+        document.querySelectorAll('.theme-dot').forEach((dot, i) => {
+            dot.classList.toggle('active', i === bgIdx);
+        });
+    };
+
+    // Fast Theme Dots in Top Header Bar
+    document.querySelectorAll('.theme-dot').forEach((dot, idx) => {
+        dot.addEventListener('click', () => setBackground(idx));
+    });
+
+    document.getElementById('btn-change-bg')?.addEventListener('click', () => {
+        setBackground(bgIdx + 1);
+    });
+
+    // Fullscreen Toggle
+    const btnFullscreen = document.getElementById('btn-fullscreen-header');
+    if (btnFullscreen) {
+        btnFullscreen.addEventListener('click', () => {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => {
+                    console.warn("Lỗi fullscreen:", err);
+                });
+            } else {
+                if (document.exitFullscreen) document.exitFullscreen();
+            }
+        });
+    }
+
+    // Phím tắt Tab để toggle Sidebars
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Tab' && !['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName)) {
+            e.preventDefault();
+            document.getElementById('btn-toggle-sidebar')?.click();
+        }
     });
 }
 
