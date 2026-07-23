@@ -1154,18 +1154,39 @@ html, body {
 }
 .modal-link:hover { text-decoration: underline; }
 
-.modal-btn.primary {
-    width: 100%;
+.modal-footer {
+    display: flex;
+    gap: 10px;
+}
+
+.modal-btn {
     padding: 11px;
     border-radius: var(--radius-md);
-    border: none;
-    background: linear-gradient(135deg, var(--purple), var(--violet));
-    color: #fff;
     font-family: inherit;
     font-size: 0.9rem;
     font-weight: 700;
     cursor: pointer;
     transition: all var(--transition-fast);
+}
+
+.modal-btn.danger {
+    flex: 1;
+    background: rgba(239, 68, 68, 0.15);
+    color: #f87171;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+}
+.modal-btn.danger:hover {
+    background: rgba(239, 68, 68, 0.25);
+    border-color: rgba(239, 68, 68, 0.5);
+    color: #fca5a5;
+    transform: translateY(-1px);
+}
+
+.modal-btn.primary {
+    flex: 2;
+    border: none;
+    background: linear-gradient(135deg, var(--purple), var(--violet));
+    color: #fff;
     box-shadow: 0 4px 16px var(--purple-glow);
 }
 .modal-btn.primary:hover { transform: translateY(-1px); box-shadow: 0 6px 22px var(--purple-glow); }

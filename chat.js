@@ -169,8 +169,9 @@ function setupChatListeners() {
         });
     });
 
-    // Save button
+    // Save & Delete buttons
     document.getElementById('btn-save-api')?.addEventListener('click', saveSettings);
+    document.getElementById('btn-delete-api')?.addEventListener('click', deleteActiveKey);
 }
 
 // =============================================
@@ -238,15 +239,22 @@ function renderSettingsModal() {
     setTimeout(() => keyInput?.focus(), 80);
 }
 
+function deleteActiveKey() {
+    const p = PROVIDERS[activeProvider];
+    localStorage.removeItem(p.storageKey);
+    const input = document.getElementById('api-key-input');
+    if (input) input.value = '';
+    closeSettingsModal();
+    updateChatStatusUI();
+    appendMessage('ai', `🗑️ Đã xóa API Key của **${p.label}** khỏi trình duyệt thành công!`);
+}
+
 function saveSettings() {
     const key = document.getElementById('api-key-input')?.value.trim();
     const p = PROVIDERS[activeProvider];
 
     if (!key) {
-        const input = document.getElementById('api-key-input');
-        input.style.borderColor = 'var(--accent)';
-        input.focus();
-        setTimeout(() => input.style.borderColor = '', 1500);
+        deleteActiveKey();
         return;
     }
 
