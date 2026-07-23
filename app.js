@@ -112,9 +112,13 @@ function setupPixi() {
     app.ticker.add(() => {
         if (!model) return;
         
-        // Khoá nhìn thẳng
+        // Khoá nhìn thẳng (Chính diện 100%, không bị nhìn lệch)
         if (lookLocked) {
-            model.focus(model.x, model.y);
+            if (model.internalModel?.focusController) {
+                model.internalModel.focusController.focus(0, 0);
+            } else {
+                model.focus(window.innerWidth / 2, window.innerHeight / 2);
+            }
         }
         
         // ===== FIX TÀN ẢNH TAY VẪY =====
@@ -313,6 +317,53 @@ function setupModelInteraction() {
     container.addEventListener('wheel', onWheelZoom, { passive: false });
 }
 
+// Helper áp dụng hành động Nhìn thẳng (0,0) - đúng posture ban đầu lúc mới mở web
+function applyLookStraight(lockState) {
+    if (typeof lockState === 'boolean') {
+        lookLocked = lockState;
+    } else {
+        lookLocked = !lookLocked;
+    }
+
+    if (model) {
+        if (lookLocked) {
+            // 1. Ép focus target về đúng tâm chính diện (0,0)
+            if (model.internalModel?.focusController) {
+                model.internalModel.focusController.focus(0, 0);
+            } else {
+                model.focus(window.innerWidth / 2, window.innerHeight / 2);
+            }
+
+            // 2. Reset các góc quay của đầu & mắt về 0 (nhìn thẳng 100%, không bị nhìn lệch)
+            const core = model.internalModel?.coreModel;
+            if (core) {
+                ['ParamAngleX', 'ParamAngleY', 'ParamAngleZ',
+                 'ParamEyeBallX', 'ParamEyeBallY',
+                 'ParamBodyAngleX', 'ParamBodyAngleY', 'ParamBodyAngleZ'
+                ].forEach(id => {
+                    try { core.setParameterValueById(id, 0); } catch (_) {}
+                });
+            }
+
+            // 3. Đưa về Idle standing pose
+            _currentMotionGroup = 'Idle';
+            try { model.motion('Idle', 0); } catch (_) {}
+        }
+    }
+
+    // 4. Cập nhật trạng thái hiển thị trên các nút UI
+    const sidebarLookBtn = document.getElementById('btn-look-straight-sidebar');
+    if (sidebarLookBtn) {
+        sidebarLookBtn.classList.toggle('active', lookLocked);
+    }
+    const dockLookBtn = document.getElementById('btn-look-center');
+    if (dockLookBtn) {
+        dockLookBtn.style.color = lookLocked ? 'var(--primary)' : '';
+        dockLookBtn.title = lookLocked ? 'Đang khoá nhìn thẳng (click để tắt)' : 'Khoá nhìn thẳng';
+        dockLookBtn.classList.toggle('active', lookLocked);
+    }
+}
+
 // 7. Render sidebar
 function populateSidebars(expressions) {
     const exprContainer = document.getElementById('expressions-container');
@@ -338,22 +389,6 @@ function populateSidebars(expressions) {
         });
         resetBtn.id = 'btn-face-default';
         grid.appendChild(resetBtn);
-
-        // Nút Nhìn thẳng (Toggle)
-        const lookBtn = createBtn('Nhìn thẳng', lookLocked, () => {
-            lookLocked = !lookLocked;
-            lookBtn.classList.toggle('active', lookLocked);
-            
-            if (lookLocked) {
-                document.getElementById('btn-face-default')?.classList.remove('active');
-            }
-            
-            if (lookLocked && model) {
-                model.focus(model.x, model.y);
-            }
-        });
-        lookBtn.id = 'btn-look-straight-sidebar';
-        grid.appendChild(lookBtn);
 
         faceExps.forEach((exp, idx) => {
             const rawName = exp.Name || exp.name || "";
@@ -394,9 +429,6 @@ function populateSidebars(expressions) {
                 activeToggles[rawName] = !activeToggles[rawName];
                 btn.classList.toggle('active', activeToggles[rawName]);
                 
-                // Nếu người dùng click tắt phụ kiện:
-                // Thiết lập các parameter của nó về 0 MỘT LẦN DUY NHẤT để tắt nó đi ngay lập tức.
-                // Ticker loop sau đó sẽ bỏ qua, không ghi đè nó nữa, giúp model tự do điều khiển.
                 if (!activeToggles[rawName]) {
                     const params = preloadedParams[rawName];
                     if (params) {
@@ -439,14 +471,19 @@ function populateSidebars(expressions) {
         _currentMotionGroup = group;
         console.log('Chạy:', group, index);
         model.motion(group, index).then(() => {
-            // Motion đã kết thúc (Loop:false cho phép Promise resolve)
             console.log(`[FIX] Motion ${group}/${index} xong → quay về Idle`);
             _currentMotionGroup = 'Idle';
-            // Ticker sẽ tự fade Param58/59/60 về mặc định
         }).catch(() => {
             _currentMotionGroup = 'Idle';
         });
     }
+
+    // Nút Nhìn thẳng 🎯 (Chuyển sang nhóm Chuyển động)
+    const lookBtn = createBtn('Nhìn thẳng 🎯', lookLocked, () => {
+        applyLookStraight();
+    });
+    lookBtn.id = 'btn-look-straight-sidebar';
+    grid.appendChild(lookBtn);
 
     // Nút chuyển động Ngẫu nhiên 🎲
     const randomBtn = createBtn('Ngẫu nhiên 🎲', false, () => {
@@ -494,16 +531,11 @@ function setupControls() {
     document.getElementById('btn-zoom-out')?.addEventListener('click', () => model?.scale.set(model.scale.x * 0.9));
     document.getElementById('btn-reset')?.addEventListener('click', () => model && fitModel());
 
-    // Nút khoá nhìn thẳng
+    // Nút khoá nhìn thẳng trên dock
     const btnLook = document.getElementById('btn-look-center');
     if (btnLook) {
         btnLook.addEventListener('click', () => {
-            lookLocked = !lookLocked;
-            btnLook.style.color = lookLocked ? 'var(--primary)' : '';
-            btnLook.title = lookLocked ? 'Đang khoá nhìn thẳng (click để tắt)' : 'Khoá nhìn thẳng';
-            if (lookLocked && model) {
-                model.focus(model.x, model.y);
-            }
+            applyLookStraight();
         });
     }
 
