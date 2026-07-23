@@ -486,9 +486,8 @@ html, body {
 
 .show-dock-btn {
     position: fixed;
-    bottom: 20px;
-    left: 50%;
-    transform: translateX(-50%) translateY(40px);
+    bottom: 24px;
+    right: 24px;
     z-index: 19;
     background: rgba(8, 5, 22, 0.78);
     backdrop-filter: blur(28px) saturate(1.6);
@@ -506,6 +505,7 @@ html, body {
     transition: transform var(--transition-spring), opacity var(--transition-fast), background-color var(--transition-fast), color var(--transition-fast);
     opacity: 0;
     pointer-events: none;
+    transform: translateY(40px);
 }
 
 .show-dock-btn svg {
@@ -516,11 +516,11 @@ html, body {
 .show-dock-btn:hover {
     color: var(--text-primary);
     background: rgba(255, 255, 255, 0.10);
-    transform: translateX(-50%) translateY(-2px) scale(1.08);
+    transform: translateY(-2px) scale(1.08);
 }
 
 .show-dock-btn.visible {
-    transform: translateX(-50%) translateY(0);
+    transform: translateY(0);
     opacity: 1;
     pointer-events: auto;
 }
