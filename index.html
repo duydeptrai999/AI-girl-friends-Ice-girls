@@ -52,13 +52,14 @@
 
         <div class="header-right">
             <div class="quick-theme-selector">
-                <button class="theme-dot active" data-theme="0" title="Băng Tuyết Tinh Thể (Ice Frost Crystal)" style="background: linear-gradient(135deg, #38bdf8, #0369a1);"></button>
-                <button class="theme-dot" data-theme="1" title="Cực Quang Băng Giá (Aurora Teal)" style="background: linear-gradient(135deg, #22d3ee, #0f766e);"></button>
-                <button class="theme-dot" data-theme="2" title="Hoa Băng Huyền Diệu (Icy Lavender)" style="background: linear-gradient(135deg, #c084fc, #581c87);"></button>
-                <button class="theme-dot" data-theme="3" title="Anh Đào Băng (Snow Sakura Pink)" style="background: linear-gradient(135deg, #f472b6, #831843);"></button>
-                <button class="theme-dot" data-theme="4" title="Đêm Đông Tuyết Rơi (Frozen Midnight)" style="background: linear-gradient(135deg, #60a5fa, #1e293b);"></button>
-                <button class="theme-dot" data-theme="5" title="Đại Dương Băng Giá (Deep Glacier)" style="background: linear-gradient(135deg, #0284c7, #075985);"></button>
-                <button class="theme-dot" data-theme="6" title="Chroma Green (Tách nền OBS Studio)" style="background: #00ff00;"></button>
+                <button class="theme-dot active" data-theme="0" title="Căn Phòng Streamer Cozy (Anime Room)" style="background: url('assets/room_bg.png') center/cover;"></button>
+                <button class="theme-dot" data-theme="1" title="Băng Tuyết Tinh Thể (Ice Frost Crystal)" style="background: linear-gradient(135deg, #38bdf8, #0369a1);"></button>
+                <button class="theme-dot" data-theme="2" title="Cực Quang Băng Giá (Aurora Teal)" style="background: linear-gradient(135deg, #22d3ee, #0f766e);"></button>
+                <button class="theme-dot" data-theme="3" title="Hoa Băng Huyền Diệu (Icy Lavender)" style="background: linear-gradient(135deg, #c084fc, #581c87);"></button>
+                <button class="theme-dot" data-theme="4" title="Anh Đào Băng (Snow Sakura Pink)" style="background: linear-gradient(135deg, #f472b6, #831843);"></button>
+                <button class="theme-dot" data-theme="5" title="Đêm Đông Tuyết Rơi (Frozen Midnight)" style="background: linear-gradient(135deg, #60a5fa, #1e293b);"></button>
+                <button class="theme-dot" data-theme="6" title="Đại Dương Băng Giá (Deep Glacier)" style="background: linear-gradient(135deg, #0284c7, #075985);"></button>
+                <button class="theme-dot" data-theme="7" title="Chroma Green (Tách nền OBS Studio)" style="background: #00ff00;"></button>
             </div>
             
             <button class="header-icon-btn" id="btn-fullscreen-header" title="Toàn màn hình" aria-label="Bật toàn màn hình">
@@ -132,6 +133,12 @@
 
     <!-- ===== FLOATING DOCK CONTROL PANEL ===== -->
     <nav class="control-panel" id="control-panel">
+        <button class="control-btn" id="btn-hide-dock" data-tooltip="Ẩn thanh công cụ" aria-label="Ẩn thanh công cụ">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        
+        <div class="control-divider"></div>
+
         <button class="control-btn" id="btn-zoom-in" data-tooltip="Phóng to" aria-label="Phóng to mô hình">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
         </button>
@@ -165,6 +172,11 @@
             <span class="chat-badge-pulse"></span>
         </button>
     </nav>
+
+    <!-- Nút Khôi phục thanh công cụ khi ẩn -->
+    <button class="show-dock-btn" id="btn-show-dock" title="Hiện thanh công cụ" aria-label="Hiện thanh công cụ">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
+    </button>
 
     <!-- ===== AI CHAT PANEL ===== -->
     <div class="chat-panel" id="chat-panel">

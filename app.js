@@ -539,6 +539,21 @@ function setupControls() {
         });
     }
 
+    // Ẩn/Hiện thanh công cụ (Control Panel Dock)
+    const controlPanel = document.getElementById('control-panel');
+    const btnHideDock = document.getElementById('btn-hide-dock');
+    const btnShowDock = document.getElementById('btn-show-dock');
+
+    btnHideDock?.addEventListener('click', () => {
+        controlPanel?.classList.add('collapsed');
+        btnShowDock?.classList.add('visible');
+    });
+
+    btnShowDock?.addEventListener('click', () => {
+        controlPanel?.classList.remove('collapsed');
+        btnShowDock?.classList.remove('visible');
+    });
+
     const leftSidebar = document.getElementById('sidebar-left');
     const rightSidebar = document.getElementById('sidebar-right');
     const showLeftBtn = document.getElementById('btn-show-left-sidebar');
@@ -581,15 +596,16 @@ function setupControls() {
         setRightSidebarCollapsed(shouldCollapseAll);
     });
 
-    // Phím tắt & Top Header Handlers: 7 màu nền phù hợp nhất với tông màu Băng & Tinh Thể của IceGirl
+    // Phím tắt & Top Header Handlers: 8 chủ đề nền (gồm Căn Phòng Streamer Cozy & 7 gradient Băng Tinh Thể)
     const bgs = [
-        'radial-gradient(ellipse at 40% 30%, #0d2238 0%, #061220 60%, #020912 100%)', // 0. Băng Tuyết Tinh Thể (Ice Frost Crystal)
-        'radial-gradient(ellipse at 30% 20%, #0a2e38 0%, #041820 60%, #020b10 100%)', // 1. Cực Quang Băng Giá (Aurora Teal)
-        'radial-gradient(ellipse at 30% 20%, #201335 0%, #0e081c 60%, #07030f 100%)', // 2. Hoa Băng Huyền Diệu (Icy Lavender)
-        'radial-gradient(ellipse at 30% 20%, #2a0e22 0%, #170614 60%, #0a0208 100%)', // 3. Anh Đào Băng (Snow Sakura Pink)
-        'radial-gradient(ellipse at 40% 30%, #0f172a 0%, #080e1a 60%, #02060d 100%)', // 4. Đêm Đông Tuyết Rơi (Frozen Midnight)
-        'radial-gradient(ellipse at 50% 20%, #072b42 0%, #031420 60%, #010810 100%)', // 5. Đại Dương Băng Giá (Deep Glacier)
-        '#00ff00' // 6. Chroma Green (Tách nền OBS Studio)
+        'url("assets/room_bg.png") center/cover no-repeat fixed', // 0. Căn Phòng Streamer Cozy (Anime Room)
+        'radial-gradient(ellipse at 40% 30%, #0d2238 0%, #061220 60%, #020912 100%)', // 1. Băng Tuyết Tinh Thể (Ice Frost Crystal)
+        'radial-gradient(ellipse at 30% 20%, #0a2e38 0%, #041820 60%, #020b10 100%)', // 2. Cực Quang Băng Giá (Aurora Teal)
+        'radial-gradient(ellipse at 30% 20%, #201335 0%, #0e081c 60%, #07030f 100%)', // 3. Hoa Băng Huyền Diệu (Icy Lavender)
+        'radial-gradient(ellipse at 30% 20%, #2a0e22 0%, #170614 60%, #0a0208 100%)', // 4. Anh Đào Băng (Snow Sakura Pink)
+        'radial-gradient(ellipse at 40% 30%, #0f172a 0%, #080e1a 60%, #02060d 100%)', // 5. Đêm Đông Tuyết Rơi (Frozen Midnight)
+        'radial-gradient(ellipse at 50% 20%, #072b42 0%, #031420 60%, #010810 100%)', // 6. Đại Dương Băng Giá (Deep Glacier)
+        '#00ff00' // 7. Chroma Green (Tách nền OBS Studio)
     ];
     let bgIdx = 0;
 
@@ -611,6 +627,9 @@ function setupControls() {
     document.getElementById('btn-change-bg')?.addEventListener('click', () => {
         setBackground(bgIdx + 1);
     });
+
+    // Thiết lập màu nền mặc định ban đầu (Căn phòng Streamer Cozy)
+    setBackground(0);
 
     // Fullscreen Toggle
     const btnFullscreen = document.getElementById('btn-fullscreen-header');
