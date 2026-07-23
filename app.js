@@ -581,12 +581,15 @@ function setupControls() {
         setRightSidebarCollapsed(shouldCollapseAll);
     });
 
-    // Phím tắt & Top Header Handlers
+    // Phím tắt & Top Header Handlers: 7 màu nền phù hợp nhất với tông màu Băng & Tinh Thể của IceGirl
     const bgs = [
-        'radial-gradient(ellipse at 30% 20%, #160a2e 0%, #060417 60%, #09031c 100%)',
-        'radial-gradient(ellipse at 30% 20%, #2a0825 0%, #0c0419 60%, #170414 100%)',
-        'radial-gradient(ellipse at 30% 20%, #0d1b2a 0%, #050a14 60%, #081220 100%)',
-        '#00ff00' // Chroma Green (OBS)
+        'radial-gradient(ellipse at 40% 30%, #0d2238 0%, #061220 60%, #020912 100%)', // 0. Băng Tuyết Tinh Thể (Ice Frost Crystal)
+        'radial-gradient(ellipse at 30% 20%, #0a2e38 0%, #041820 60%, #020b10 100%)', // 1. Cực Quang Băng Giá (Aurora Teal)
+        'radial-gradient(ellipse at 30% 20%, #201335 0%, #0e081c 60%, #07030f 100%)', // 2. Hoa Băng Huyền Diệu (Icy Lavender)
+        'radial-gradient(ellipse at 30% 20%, #2a0e22 0%, #170614 60%, #0a0208 100%)', // 3. Anh Đào Băng (Snow Sakura Pink)
+        'radial-gradient(ellipse at 40% 30%, #0f172a 0%, #080e1a 60%, #02060d 100%)', // 4. Đêm Đông Tuyết Rơi (Frozen Midnight)
+        'radial-gradient(ellipse at 50% 20%, #072b42 0%, #031420 60%, #010810 100%)', // 5. Đại Dương Băng Giá (Deep Glacier)
+        '#00ff00' // 6. Chroma Green (Tách nền OBS Studio)
     ];
     let bgIdx = 0;
 
